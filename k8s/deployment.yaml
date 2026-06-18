@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: slides-api
+  labels:
+    app: slides-api
+spec:
+  replicas: 1
+  selector:
+    matchLabes:
+      app: slieds-api
+  template:
+    metadata:
+      labels:
+        app: slides-api
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: slides-api
+        image: 228948462538.dkr.ecr.ap-northeast-2.amazonaws.com/slides-api
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
