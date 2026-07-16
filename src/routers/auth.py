@@ -1,4 +1,4 @@
-from db import db_users, db_sessions
+from db import owner_pw, db_sessions
 from fastapi import APIRouter, HTTPException, Response, Cookie
 from pydantic import BaseModel
 
@@ -6,7 +6,6 @@ import uuid
 
 
 class Login(BaseModel):
-    username: str
     password: str
 
 
@@ -24,24 +23,31 @@ def generate_unique_session_id():
 # login
 @router.post("/auth/login")
 def login(response: Response, info: Login):
-    user = info.username
     pw = info.password
-    if user in db_users:
-        if db_users[user] == pw:
+    if pw == owner_pw:
             session_id = generate_unique_session_id()
-            db_sessions[session_id] = user
+            db_sessions[session_id] = "owner"
             
             response.set_cookie(key="session_id", value=session_id)
-            return {"message": f"User {user} signed in."}
-        else:
-            raise HTTPException(status_code=401, detail="Unauthorized access. Wrong password.")
+            return {"message": f"Owner session : You can edit any slides."}
     else:
-        raise HTTPException(status_code=401, detail=f"Unauthorized Access. User {user} not found.")
-
+        raise HTTPException(status_code=401, detail="Unauthorized access. Wrong password.")
+    
 # logout
 @router.post("/auth/logout")
 def logout(response: Response, session_id: str = Cookie(None)):
     logout_user = db_sessions.pop(session_id)
     response.delete_cookie(key="session_id")
 
-    return {"message": f"User {logout_user} signed out."}
+    return {"message": f"Owner signed out. You cannot edit any slides anymore."}
+
+# session check
+@router.get("/auth/me")
+def session(session_id: str = Cookie(None)):
+    role = ""
+    if session_id in db_sessions:
+        if db_sessions[session_id] == "owner":
+            role = "owner"
+    else:
+        role = "viewer"
+    return {"role": role}

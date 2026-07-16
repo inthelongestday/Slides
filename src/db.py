@@ -19,3 +19,6 @@ db_users = {
 # db_sessions { session_id: username }
 # primary_key : session_id
 db_sessions = {}
+
+# owner password
+owner_pw = "ownercanedit"
