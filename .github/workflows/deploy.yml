@@ -28,12 +28,6 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-
-    - name: Debug - compare registry values
-      run: |
-        echo "로그인된 레지스트리: '${{ steps.login-ecr.outputs.registry }}'"
-        echo "Secret ECR_REGISTRY:  '${{ secrets.ECR_REGISTRY }}'"
-
     - name: 5. Build and Push
       env:
         ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
@@ -58,16 +52,16 @@ jobs:
             docker login --username AWS --password-stdin \
             ${{ secrets.ECR_REGISTRY }}
           # k3s ECR 시크릿 갱신 (토큰 만료 방지)
-          kubectl delete secret ecr-secret --ignore-not-found
-          kubectl create secret docker-registry ecr-secret \
+          sudo kubectl delete secret ecr-secret --ignore-not-found
+          sudo kubectl create secret docker-registry ecr-secret \
             --docker-server=${{ secrets.ECR_REGISTRY }} \
             --docker-username=AWS \
             --docker-password=$(aws ecr get-login-password --region ap-northeast-2)
           # 새 이미지로 배포
-          kubectl set image deployment/slides-api \
+          sudo kubectl set image deployment/slides-api \
             slides-api=${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:${{ github.sha }}
           # 배포 완료 대기
-          kubectl rollout status deployment/slides-api
+          sudo kubectl rollout status deployment/slides-api
 
     - name : 7. Remove GH Action IPs from SG
       if: always()
