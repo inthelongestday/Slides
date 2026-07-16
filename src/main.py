@@ -14,4 +14,4 @@ app.middleware("http")(session_middleware)
 app.middleware("http")(log_middleware)
 
 WEB_DIR = Path(__file__).parent / "web"
-app.mount("/", StaticFiles(directory="web", html=True), name="web")
+app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
