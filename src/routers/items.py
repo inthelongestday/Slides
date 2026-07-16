@@ -14,25 +14,25 @@ class ItemPrice(BaseModel):
 router = APIRouter()
 
 # CRUD C : Create
-@router.post("/items")
+@router.post("/api/items")
 def add_items(item: Item):
     db_items[item.name] = item.price
     return {"message": f"item added: {item}"}
 
 # CRUD R : Read
-@router.get("/items")
+@router.get("/api/items")
 def get_items():
     return db_items
 
 # CRUD R : Read (특정 item)
-@router.get("/items/{item_id}")
+@router.get("/api/items/{item_id}")
 def get_item(item_id: str):
     if item_id not in db_items:
         raise HTTPException(status_code=404, detail="item not found.")
     return {item_id: db_items[item_id]}
 
 # CRUD U : Update
-@router.put("/items/{item_id}")
+@router.put("/api/items/{item_id}")
 def update_item(item_id: str, price: ItemPrice):
     if item_id not in db_items:
         raise HTTPException(status_code=404, detail="item not found.")
@@ -40,7 +40,7 @@ def update_item(item_id: str, price: ItemPrice):
     return {"message": f"item updated - name: {item_id}, price: {db_items[item_id]}"}
 
 # CRUD D : Delete
-@router.delete("/items/{item_id}")
+@router.delete("/api/items/{item_id}")
 def delete_item(item_id: str):
     if item_id not in db_items:
         raise HTTPException(status_code=404, detail="item not found.")

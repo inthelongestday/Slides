@@ -21,7 +21,7 @@ def generate_unique_session_id():
     return str(id)
 
 # login
-@router.post("/auth/login")
+@router.post("/api/auth/login")
 def login(response: Response, info: Login):
     pw = info.password
     if pw == owner_pw:
@@ -34,7 +34,7 @@ def login(response: Response, info: Login):
         raise HTTPException(status_code=401, detail="Unauthorized access. Wrong password.")
     
 # logout
-@router.post("/auth/logout")
+@router.post("/api/auth/logout")
 def logout(response: Response, session_id: str = Cookie(None)):
     logout_user = db_sessions.pop(session_id)
     response.delete_cookie(key="session_id")
@@ -42,7 +42,7 @@ def logout(response: Response, session_id: str = Cookie(None)):
     return {"message": f"Owner signed out. You cannot edit any slides anymore."}
 
 # session check
-@router.get("/auth/me")
+@router.get("/api/auth/me")
 def session(session_id: str = Cookie(None)):
     role = ""
     if session_id in db_sessions:

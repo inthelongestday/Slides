@@ -46,11 +46,12 @@ async def log_middleware(request: Request, call_next):
 
 async def session_middleware(request: Request, call_next):
     cookies = request.cookies
-    url = str(request.url)
+    path = str(request.url.path)
+    method = str(request.method)
 
     no_session = False
 
-    if "/auth/login" in url or "/docs" in url or "/openapi" in url:
+    if method == "GET" or path == "/api/auth/login":
         no_session = True
 
     if not no_session:

@@ -12,23 +12,23 @@
 
 두 종류의 저장 대상이 있습니다.
 
-| | 문서 (docs) | 페이지 (pages) |
+| | 문서 (index) | 페이지 (slides) |
 |---|---|---|
 | 내용 | 구조화된 JSON (허브의 폴더/핀/카탈로그 상태) | 슬라이드 원본 HTML 그 자체 (문자열 통째로) |
 | 예시 id | `index.html` | `pg_a1b2c3` |
 | 동시수정 보호 | 있음 (rev 낙관적 락) | 없음 (owner 1인 가정, 단순 덮어쓰기) |
-| 프론트 저장 위치 | `hubState.pages` (카탈로그) + `hubState.layout` (폴더/핀 배치) | 각 슬라이드 파일 |
+| 프론트 저장 위치 | `hubState.slides` (카탈로그) + `hubState.layout` (폴더/핀 배치) | 각 슬라이드 파일 |
 
 지금 이 프로젝트는 문서가 `index.html` 딱 하나뿐입니다 (허브 상태 전체를 담는 단일 JSON).
 페이지는 사용자가 "+새 페이지"로 추가할 때마다 늘어납니다.
 
-> **중요 — `docs`의 `{id}`는 `index.html`만이 아닙니다.** 슬라이드 엔진(`ax-slide-engine.js`)이
+> **중요 — `index`의 `{id}`는 `index.html`만이 아닙니다.** 슬라이드 엔진(`ax-slide-engine.js`)이
 > 자체적으로 `WikiStorage.loadDoc()` / `saveDoc(data)`를 **id 없이** 호출합니다 — 이때
 > `storage.js`가 현재 문서 URL(`location.pathname`)의 마지막 조각을 문서 id로 자동 사용해서
-> `GET/PUT /api/docs/{page_id}`를 부릅니다. 즉 슬라이드 하나(`pg_a1b2c3`)를 열면
-> `/api/docs/pg_a1b2c3`에 그 슬라이드의 **인라인 텍스트 수정 + 컴포넌트 순서변경 상태**가
+> `GET/PUT /api/index/{page_id}`를 부릅니다. 즉 슬라이드 하나(`pg_a1b2c3`)를 열면
+> `/api/index/pg_a1b2c3`에 그 슬라이드의 **인라인 텍스트 수정 + 컴포넌트 순서변경 상태**가
 > `{__count, s0: "...", s1: "...", ...}` 형태로 저장됩니다 (허브의 `payload`와는 완전히
-> 다른 스키마 — `docs` API는 payload 내부 구조를 몰라도 되고 그냥 JSON 통째로 저장/반환만
+> 다른 스키마 — `index` API는 payload 내부 구조를 몰라도 되고 그냥 JSON 통째로 저장/반환만
 > 하면 됩니다). **`{id}` 파라미터를 하드코딩하지 말고 임의의 문자열을 다 받아주세요.**
 
 ---
@@ -77,8 +77,8 @@
 
 ## 2. 문서 (허브 상태 JSON)
 
-### `GET /api/docs/{id}`
-예: `GET /api/docs/index.html`
+### `GET /api/index/{id}`
+예: `GET /api/index/index.html`
 
 **응답 (200)**
 ```json
@@ -87,13 +87,13 @@
   "kind": "hub",
   "rev": 3,
   "payload": {
-    "pages": [
-      { "id": "pg_a1b2c3", "title": "AX STEP 1", "desc": "...", "href": "api/pages/pg_a1b2c3", "category": "slide", "meta": "" }
+    "slides": [
+      { "id": "pg_a1b2c3", "title": "AX STEP 1", "desc": "...", "href": "api/slides/pg_a1b2c3", "category": "slide", "meta": "" }
     ],
     "layout": {
       "folders": [ { "id": "f1", "name": "AX 교육자료", "parentId": null, "order": 0 } ],
-      "pages": { "api/pages/pg_a1b2c3": { "folderId": "f1", "pinned": true } },
-      "pinOrder": ["api/pages/pg_a1b2c3"]
+      "slides": { "api/slides/pg_a1b2c3": { "folderId": "f1", "pinned": true } },
+      "pinOrder": ["api/slides/pg_a1b2c3"]
     }
   },
   "updated_by": "owner"
@@ -104,14 +104,14 @@
 { "id": "index.html", "kind": "hub", "rev": 0, "payload": {}, "updated_by": null }
 ```
 
-**프론트 사용처**: `storage.js: loadDoc('index.html')` ← 페이지 최초 로드시 `initializePage()`에서 1회 호출. 반환된 `payload.pages`/`payload.layout`이 `hubState`에 그대로 들어가 사이드바/핀그리드/폴더 렌더링의 원본 데이터가 됩니다.
+**프론트 사용처**: `storage.js: loadDoc('index.html')` ← 페이지 최초 로드시 `initializePage()`에서 1회 호출. 반환된 `payload.slides`/`payload.layout`이 `hubState`에 그대로 들어가 사이드바/핀그리드/폴더 렌더링의 원본 데이터가 됩니다.
 
 ---
 
-### `PUT /api/docs/{id}`
+### `PUT /api/index/{id}`
 **요청 body**
 ```json
-{ "baseRev": 3, "payload": { "pages": [...], "layout": {...} } }
+{ "baseRev": 3, "payload": { "slides": [...], "layout": {...} } }
 ```
 
 **응답**
@@ -132,7 +132,7 @@
 
 ---
 
-### `GET /api/docs/{id}/revisions`
+### `GET /api/index/{id}/revisions`
 **응답**
 ```json
 [
@@ -147,24 +147,24 @@
 
 ## 3. 페이지 (슬라이드 원본 HTML)
 
-### `POST /api/pages`
+### `POST /api/slides`
 **요청 body**
 ```json
 { "html": "<!DOCTYPE html>...전체 슬라이드 HTML..." }
 ```
 **응답 (200)**
 ```json
-{ "id": "pg_a1b2c3", "href": "api/pages/pg_a1b2c3" }
+{ "id": "pg_a1b2c3", "href": "api/slides/pg_a1b2c3" }
 ```
 - `id`는 서버가 생성(랜덤/타임스탬프 기반, 예: `secrets.token_urlsafe(6)`)
-- `href`는 **반드시 `api/pages/{id}` 형태**로 돌려주세요 — 프론트가 이 값을 iframe의 `src`로 그대로 씁니다.
+- `href`는 **반드시 `api/slides/{id}` 형태**로 돌려주세요 — 프론트가 이 값을 iframe의 `src`로 그대로 씁니다.
 - `403` — viewer의 쓰기 시도
 
-> **필수 처리 — `<base href="/">` 자동 주입.** 슬라이드는 `api/pages/{id}`처럼 중첩된
+> **필수 처리 — `<base href="/">` 자동 주입.** 슬라이드는 `api/slides/{id}`처럼 중첩된
 > 경로로 서빙되기 때문에, 슬라이드 HTML 안의 상대경로(`href="ax-slide-engine.css"`,
 > `src="storage.js"`, `src="ax-slide-engine.js"`, 그리고 `storage.js` 내부의
-> `fetch('api/docs/...')`)가 전부 **문서 URL 기준으로 잘못 풀립니다**
-> (예: `/api/pages/storage.js`처럼 깨져서 404). **저장하기 전에 `<head>` 바로 다음에
+> `fetch('api/index/...')`)가 전부 **문서 URL 기준으로 잘못 풀립니다**
+> (예: `/api/slides/storage.js`처럼 깨져서 404). **저장하기 전에 `<head>` 바로 다음에
 > `<base href="/">`가 없으면 삽입해주세요** (이미 있으면 중복 삽입 금지 — 멱등성 유지).
 > 이렇게 하면 모든 상대경로가 사이트 루트 기준으로 정확히 풀립니다.
 > ```python
@@ -179,23 +179,23 @@
 > §5의 static mount로 **사이트 루트**(`/ax-slide-engine.css` 등)에서 서빙되게 하세요 —
 > `<base href="/">`와 짝이 맞아야 상대경로가 실제로 맞아떨어집니다.
 
-**프론트 사용처**: `storage.js: createPage(html)` ← "+ 새 페이지" 모달에서 `submitPage()`가 신규 생성일 때 호출. 반환된 `href`로 카탈로그(`hubState.pages`)에 항목을 추가하고 곧바로 `PUT /api/docs/index.html`을 호출해 등록을 완료합니다.
+**프론트 사용처**: `storage.js: createPage(html)` ← "+ 새 페이지" 모달에서 `submitPage()`가 신규 생성일 때 호출. 반환된 `href`로 카탈로그(`hubState.slides`)에 항목을 추가하고 곧바로 `PUT /api/index/index.html`을 호출해 등록을 완료합니다.
 
 ---
 
-### `GET /api/pages/{id}`
+### `GET /api/slides/{id}`
 **응답 (200)**: `Content-Type: text/html`, body는 저장된 HTML 원본 그대로.
 `404` — 없는 id.
 
 **중요**: 이 엔드포인트는 두 가지 방식으로 쓰입니다.
-1. **iframe이 직접 GET** — 사용자가 사이드바/카드를 클릭하면 `<iframe src="api/pages/pg_a1b2c3">`로 브라우저가 이 URL을 그대로 로드합니다. **응답은 완전한 HTML 문서(`<!DOCTYPE html>`부터)여야** iframe에 정상 렌더링됩니다.
+1. **iframe이 직접 GET** — 사용자가 사이드바/카드를 클릭하면 `<iframe src="api/slides/pg_a1b2c3">`로 브라우저가 이 URL을 그대로 로드합니다. **응답은 완전한 HTML 문서(`<!DOCTYPE html>`부터)여야** iframe에 정상 렌더링됩니다.
 2. **`storage.js`가 fetch로 GET** — 편집 모달을 열 때 원본을 텍스트로 가져와 textarea에 채웁니다 (`loadPageHtml(id)`).
 
 **프론트 사용처**: `openDoc(href, ...)`(뷰어) 및 `openEditPageModal(id)` → `WikiStorage.loadPageHtml(id)`(편집 모달 프리필).
 
 ---
 
-### `PUT /api/pages/{id}`
+### `PUT /api/slides/{id}`
 **요청 body**
 ```json
 { "html": "<!DOCTYPE html>...수정된 전체 HTML..." }
@@ -205,30 +205,30 @@
 - `403` — viewer
 - `404` — 없는 id
 
-**프론트 사용처**: `storage.js: savePageHtml(id, html)` ← 편집 모달에서 기존 페이지를 저장할 때 `submitPage()`가 호출. 이후 카탈로그의 title/desc/category 변경분은 별도로 `PUT /api/docs/index.html`로 저장됩니다 (HTML 본문과 메타데이터는 항상 분리 저장).
+**프론트 사용처**: `storage.js: savePageHtml(id, html)` ← 편집 모달에서 기존 페이지를 저장할 때 `submitPage()`가 호출. 이후 카탈로그의 title/desc/category 변경분은 별도로 `PUT /api/index/index.html`로 저장됩니다 (HTML 본문과 메타데이터는 항상 분리 저장).
 
 > **참고 — 두 가지 편집 경로가 공존합니다.** ① 허브의 "편집" 모달(이 엔드포인트)은 슬라이드
 > **원본 HTML 전체를 교체**합니다. ② 엔진 자체의 "편집" 토글(`ax-slide-engine.js`)은 원본은
-> 그대로 두고 텍스트/순서 변경분만 `/api/docs/{page_id}`에 **오버레이**로 저장합니다.
+> 그대로 두고 텍스트/순서 변경분만 `/api/index/{page_id}`에 **오버레이**로 저장합니다.
 > 슬라이드 개수(`__count`)가 바뀌면 엔진이 오버레이 복원을 자동으로 건너뛰지만, 개수가
 > 같으면서 내용만 다른 새 원본으로 교체하면 옛 오버레이 텍스트가 새 슬라이드 위에 덮어써질
 > 수 있습니다. 지금은 API 스펙에서 강제할 부분은 아니라 그냥 알고 계시라고 남겨둡니다 —
-> 필요하면 ①로 교체할 때 해당 페이지의 `/api/docs/{page_id}` 오버레이를 같이 삭제하는
+> 필요하면 ①로 교체할 때 해당 페이지의 `/api/index/{page_id}` 오버레이를 같이 삭제하는
 > 로직을 추가하는 게 안전합니다.
 
 ---
 
-### `DELETE /api/pages/{id}`
+### `DELETE /api/slides/{id}`
 **응답**
 - `204` — 삭제 성공 (파일도 실제로 지워주세요)
 - `403` — viewer
 - `404` — 없는 id
 
-> 페이지 파일 삭제 시 `/api/docs/{id}`에 쌓여있을 수 있는 그 슬라이드의 인라인편집
+> 페이지 파일 삭제 시 `/api/index/{id}`에 쌓여있을 수 있는 그 슬라이드의 인라인편집
 > 오버레이(§0 참고)도 같이 지워주는 걸 추천합니다 — 안 지워도 동작은 하지만(새 페이지가
 > 같은 id를 재사용할 일은 없으니) 그냥 죽은 데이터로 남아요.
 
-**프론트 사용처**: `storage.js: deletePage(id)` ← 편집 모달의 "삭제" 버튼(`deleteCurrentPage()`). 삭제 후 카탈로그/레이아웃에서도 해당 항목을 제거하고 `PUT /api/docs/index.html`을 호출합니다.
+**프론트 사용처**: `storage.js: deletePage(id)` ← 편집 모달의 "삭제" 버튼(`deleteCurrentPage()`). 삭제 후 카탈로그/레이아웃에서도 해당 항목을 제거하고 `PUT /api/index/index.html`을 호출합니다.
 
 ---
 
@@ -245,14 +245,14 @@ class StorageBackend(ABC):
     def delete_page(self, page_id: str) -> bool: ...
 
 class LocalFileBackend(StorageBackend):
-    # data/docs/{id}.json  = {"kind":..., "rev":..., "payload":..., "updated_by":..., "updated_at":...}
-    # data/pages/{id}.html = 원본 그대로
+    # data/index/{id}.json  = {"kind":..., "rev":..., "payload":..., "updated_by":..., "updated_at":...}
+    # data/slides/{id}.html = 원본 그대로
     ...
 
 # 나중: class S3Backend(StorageBackend): ...  ← 교체만 하면 라우터 코드는 그대로 재사용
 ```
 
-라우터(`routers/docs.py`, `routers/pages.py`)는 `StorageBackend` 인터페이스만 알고 구현체를 몰라야, 나중에 S3로 바꿀 때 라우터 코드를 안 건드리게 됩니다.
+라우터(`routers/index.py`, `routers/slides.py`)는 `StorageBackend` 인터페이스만 알고 구현체를 몰라야, 나중에 S3로 바꿀 때 라우터 코드를 안 건드리게 됩니다.
 
 ---
 
@@ -287,10 +287,10 @@ static/
 | POST | `/api/auth/login` | - | 로그인 |
 | POST | `/api/auth/logout` | - | 로그아웃 |
 | GET | `/api/me` | - | 현재 role 조회 |
-| GET | `/api/docs/{id}` | - | 허브 상태 조회 |
-| PUT | `/api/docs/{id}` | owner | 허브 상태 저장 |
-| GET | `/api/docs/{id}/revisions` | - | 변경 이력 (나중) |
-| POST | `/api/pages` | owner | 새 슬라이드 등록 |
-| GET | `/api/pages/{id}` | - | 슬라이드 원본 조회 |
-| PUT | `/api/pages/{id}` | owner | 슬라이드 원본 수정 |
-| DELETE | `/api/pages/{id}` | owner | 슬라이드 삭제 |
+| GET | `/api/index/{id}` | - | 허브 상태 조회 |
+| PUT | `/api/index/{id}` | owner | 허브 상태 저장 |
+| GET | `/api/index/{id}/revisions` | - | 변경 이력 (나중) |
+| POST | `/api/slides` | owner | 새 슬라이드 등록 |
+| GET | `/api/slides/{id}` | - | 슬라이드 원본 조회 |
+| PUT | `/api/slides/{id}` | owner | 슬라이드 원본 수정 |
+| DELETE | `/api/slides/{id}` | owner | 슬라이드 삭제 |
