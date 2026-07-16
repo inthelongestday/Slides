@@ -1,7 +1,9 @@
 name: Deploy to EC2 k3s
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+    - main
 
 jobs:
   deploy:
