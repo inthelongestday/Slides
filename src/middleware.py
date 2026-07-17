@@ -1,4 +1,5 @@
 from db import db_log, db_sessions
+from datetime import datetime
 from fastapi import Request
 from pydantic import BaseModel
 from starlette.responses import JSONResponse
@@ -16,7 +17,8 @@ class Log(BaseModel):
     query_params: dict = {}
 
     def print_log(self):
-        print("[Server Log]", self.method, self.url, "| status:", self.status, "| client:", f'{self.client_host}:{self.client_port}', "| elapsed time:", f'{round(self.elapsed_time*1000, 2)}ms')
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print("[{ts}]", "[Server Log]", self.method, self.url, "| status:", self.status, "| client:", f'{self.client_host}:{self.client_port}', "| elapsed time:", f'{round(self.elapsed_time*1000, 2)}ms')
 
 
 async def log_middleware(request: Request, call_next):

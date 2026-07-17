@@ -7,19 +7,19 @@
    계약 (백엔드가 구현해야 하는 것 — 자세한 스펙은 API_SPEC.md 참고):
 
      [문서 — 허브의 구조화된 상태(JSON)]
-     GET  api/me                    → {role: "owner" | "viewer"}
-     GET  api/docs/{id}             → {id, kind, rev, payload, updated_by}
-     PUT  api/docs/{id}  body {baseRev, payload}
+     GET  api/auth/me                    → {role: "owner" | "viewer"}
+     GET  api/index/{id}             → {id, kind, rev, payload, updated_by}
+     PUT  api/index/{id}  body {baseRev, payload}
                                      → 200 {id, rev}
                                      | 409 {conflict, rev, payload, updated_by}
                                      | 413 (payload too large) | 403 (viewer)
-     GET  api/docs/{id}/revisions   → [{rev, author, created_at}]
+     GET  api/index/{id}/revisions   → [{rev, author, created_at}]
 
      [페이지 — 슬라이드 원본 HTML 그 자체]
-     POST   api/pages          body {html}         → {id, href}
-     GET    api/pages/{id}                          → text/html (원본 그대로)
-     PUT    api/pages/{id}     body {html}          → {id}
-     DELETE api/pages/{id}                          → 204
+     POST   api/slides          body {html}         → {id, href}
+     GET    api/slides/{id}                          → text/html (원본 그대로)
+     PUT    api/slides/{id}     body {html}          → {id}
+     DELETE api/slides/{id}                          → 204
 
      [인증]
      POST api/auth/login   body {password} → 200 | 401
@@ -67,7 +67,7 @@
   // ---- 역할/사용자 ----
   async function getMe() {
     if (_me) return _me;
-    _me = await _getJSON('api/me');
+    _me = await _getJSON('api/auth/me');
     return _me;
   }
   async function getRole() {
@@ -95,7 +95,7 @@
   // ---- 문서(JSON 상태) 로드 ----
   async function loadDoc(id) {
     id = id || DOC_ID;
-    var data = await _getJSON('api/docs/' + encodeURIComponent(id));
+    var data = await _getJSON('api/index/' + encodeURIComponent(id));
     _revs[id] = data.rev;
     return data.payload || {};
   }
@@ -122,7 +122,7 @@
 
   async function _put(id, payload) {
     var baseRev = _revs[id];
-    var res = await fetch(_url('api/docs/' + encodeURIComponent(id)), {
+    var res = await fetch(_url('api/index/' + encodeURIComponent(id)), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ baseRev: baseRev, payload: payload })
@@ -165,12 +165,12 @@
 
   async function listRevisions(id) {
     id = id || DOC_ID;
-    return _getJSON('api/docs/' + encodeURIComponent(id) + '/revisions');
+    return _getJSON('api/index/' + encodeURIComponent(id) + '/revisions');
   }
 
   // ---- 페이지(슬라이드 원본 HTML) ----
   async function createPage(html) {
-    var res = await fetch(_url('api/pages'), {
+    var res = await fetch(_url('api/slides'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ html: html })
@@ -182,12 +182,12 @@
     return res.json(); // {id, href}
   }
   async function loadPageHtml(id) {
-    var res = await fetch(_url('api/pages/' + encodeURIComponent(id)));
+    var res = await fetch(_url('api/slides/' + encodeURIComponent(id)));
     if (!res.ok) throw new Error('[ERROR] storage: 페이지 로드 실패 — HTTP ' + res.status);
     return res.text();
   }
   async function savePageHtml(id, html) {
-    var res = await fetch(_url('api/pages/' + encodeURIComponent(id)), {
+    var res = await fetch(_url('api/slides/' + encodeURIComponent(id)), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ html: html })
@@ -199,7 +199,7 @@
     return res.json(); // {id}
   }
   async function deletePage(id) {
-    var res = await fetch(_url('api/pages/' + encodeURIComponent(id)), { method: 'DELETE' });
+    var res = await fetch(_url('api/slides/' + encodeURIComponent(id)), { method: 'DELETE' });
     if (!res.ok && res.status !== 204) {
       throw new Error('[ERROR] storage: 페이지 삭제 실패 — HTTP ' + res.status);
     }
